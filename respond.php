@@ -13,6 +13,29 @@
  * $Id: respond.php 17063 2010-03-25 06:35:46Z liuhui $
  */
 
+$note1 = explode(',', urldecode($_REQUEST['note1']));
+if (isset($note1[1]) && $note1[1] == 'mobile') {
+    // 輸出html
+    $html = '<!DOCTYPE html>';
+    $html .= '<html>';
+    $html .= '<head>';
+    $html .= '<meta charset="utf-8">';
+    $html .= '</head>';
+    $html .= '<body>';
+
+    $html .= '<form method="post" id="suntech_payment" action="mobile/respond.php" >';
+    foreach ($_POST as $key => $post) {
+        $html .= '<input type="hidden" name="' . $key . '" value="' . $post . '">';
+    }
+    $html .= '</form>';
+    $html .= '<script type="text/javascript">document.getElementById("suntech_payment").submit();</script>';
+
+    $html .= '</body>';
+    $html .= '</html>';
+
+    echo $html;
+}
+
 define('IN_ECS', true);
 
 require(dirname(__FILE__) . '/includes/init.php');
@@ -22,65 +45,51 @@ require(ROOT_PATH . 'includes/lib_order.php');
 $pay_code = !empty($_REQUEST['code']) ? trim($_REQUEST['code']) : '';
 
 //获取首信支付方式
-if (empty($pay_code) && !empty($_REQUEST['v_pmode']) && !empty($_REQUEST['v_pstring']))
-{
+if (empty($pay_code) && !empty($_REQUEST['v_pmode']) && !empty($_REQUEST['v_pstring'])) {
     $pay_code = 'cappay';
 }
 
 //获取快钱神州行支付方式
-if (empty($pay_code) && ($_REQUEST['ext1'] == 'shenzhou') && ($_REQUEST['ext2'] == 'ecshop'))
-{
+if (empty($pay_code) && ($_REQUEST['ext1'] == 'shenzhou') && ($_REQUEST['ext2'] == 'ecshop')) {
     $pay_code = 'shenzhou';
 }
 
 //获取紅陽金流支付方式
-if (empty($pay_code) && $_REQUEST['note1'])
-{
-    if ($_REQUEST['SendType']=='1') {exit;} //略過背景傳送
-    $pay_code = $_REQUEST['note1'];
+if (empty($pay_code) && $_REQUEST['note1']) {
+    $pay_code = $note1[0];
 }
 
 /* 参数是否为空 */
-if (empty($pay_code))
-{
+if (empty($pay_code)) {
     $msg = $_LANG['pay_not_exist'];
-}
-else
-{
+} else {
     /* 检查code里面有没有问号 */
-    if (strpos($pay_code, '?') !== false)
-    {
+    if (strpos($pay_code, '?') !== false) {
         $arr1 = explode('?', $pay_code);
         $arr2 = explode('=', $arr1[1]);
 
-        $_REQUEST['code']   = $arr1[0];
+        $_REQUEST['code'] = $arr1[0];
         $_REQUEST[$arr2[0]] = $arr2[1];
-        $_GET['code']       = $arr1[0];
-        $_GET[$arr2[0]]     = $arr2[1];
-        $pay_code           = $arr1[0];
+        $_GET['code'] = $arr1[0];
+        $_GET[$arr2[0]] = $arr2[1];
+        $pay_code = $arr1[0];
     }
 
     /* 判断是否启用 */
     $sql = "SELECT COUNT(*) FROM " . $ecs->table('payment') . " WHERE pay_code = '$pay_code' AND enabled = 1";
-    if ($db->getOne($sql) == 0)
-    {
+    if ($db->getOne($sql) == 0) {
         $msg = $_LANG['pay_disabled'];
-    }
-    else
-    {
+    } else {
         $plugin_file = 'includes/modules/payment/' . $pay_code . '.php';
 
         /* 检查插件文件是否存在，如果存在则验证支付是否成功，否则则返回失败信息 */
-        if (file_exists($plugin_file))
-        {
+        if (file_exists($plugin_file)) {
             /* 根据支付方式代码创建支付类的对象并调用其响应操作方法 */
             include_once($plugin_file);
 
             $payment = new $pay_code();
-            $msg     = ($payment->respond()) ? $_LANG['pay_success'] : $_LANG['pay_fail'];
-        }
-        else
-        {
+            $msg = ($payment->respond()) ? $_LANG['pay_success'] : $_LANG['pay_fail'];
+        } else {
             $msg = $_LANG['pay_not_exist'];
         }
     }
@@ -89,14 +98,13 @@ else
 assign_template();
 $position = assign_ur_here();
 $smarty->assign('page_title', $position['title']);   // 页面标题
-$smarty->assign('ur_here',    $position['ur_here']); // 当前位置
+$smarty->assign('ur_here', $position['ur_here']); // 当前位置
 $smarty->assign('page_title', $position['title']);   // 页面标题
-$smarty->assign('ur_here',    $position['ur_here']); // 当前位置
-$smarty->assign('helps',      get_shop_help());      // 网店帮助
+$smarty->assign('ur_here', $position['ur_here']); // 当前位置
+$smarty->assign('helps', get_shop_help());      // 网店帮助
 
-$smarty->assign('message',    $msg);
-$smarty->assign('shop_url',   $ecs->url());
+$smarty->assign('message', $msg);
+$smarty->assign('shop_url', $ecs->url());
 
 $smarty->display('respond.dwt');
 
-?>
