@@ -1,4 +1,11 @@
 ## 紅陽科技 ECSHOP V4.x 模組
+
+#### 模組下載：
+請下載 ECShopV4.1.1.zip 檔案
+
+#### 安裝方式：
+請參考 Installation.docx 或 Installation.pdf 說明進行安裝設定
+
 #### 支援金流：
 1. 信用卡刷卡（含分期付款）
 2. Apple Pay
